@@ -23,6 +23,9 @@ pygame.init()
 display = pygame.display.set_mode((config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
 pygame.display.set_caption("stackman -- dev")
 
+# font for FPS monitoring
+font = pygame.font.SysFont("Arial", 18)
+
 running = True
 while running:
     # event handling
@@ -79,12 +82,18 @@ while running:
     # display.blit(pull_sprite, (48 * 5, 48 * 5 * 2), frame_pull)
     # display.blit(push_sprite, (48 * 5, 48 * 5 * 3), frame_push)
     # display.blit(sneak_sprite, (48 * 5 * 2, 0), frame_sneak)
-    pygame.display.update()
 
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate-
     # independent physics.
     dt = clock.tick(config.FPS) / 1000
-    print(dt)
+
+    # display FPS
+    fps = round(1 / dt, 2)
+    fps_text = font.render(f"FPS: {fps}", True, (255,255,255))
+    display.blit(fps_text, (config.DISPLAY_WIDTH - fps_text.get_width(), 0))
+
+    pygame.display.update()
+
 
 pygame.quit()
