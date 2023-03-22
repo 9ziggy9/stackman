@@ -1,0 +1,4 @@
+* stackman
+Stackman is a vidya game written in python using pygame library.
+** Installation
+Coming soon.
