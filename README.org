@@ -3,4 +3,12 @@ Stackman is a vidya game written in python using pygame library.
 ** Using Repo
 Each branch corresponds to a day of development.
 ** Installation
-Coming soon.
+
+#+BEGIN_SRC console
+ $ pip install -r requirements.txt 
+#+END_SRC
+
+To run:
+#+BEGIN_SRC console
+ $ python main.py 
+#+END_SRC
