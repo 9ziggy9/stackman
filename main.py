@@ -7,10 +7,10 @@ animation_timer = 0
 
 pygame.init()
 display = pygame.display.set_mode((config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
-pygame.display.set_caption("stackman")
+pygame.display.set_caption("stackman -- dev")
 
-stackman_x = config.SPRITE_LEN * config.SPRITE_SCALE / 2
-stackman_y = config.SPRITE_LEN * config.SPRITE_SCALE / 2
+stackman_x = animate.SPRITE_WIDTH * animate.SPRITE_SCALE / 2
+stackman_y = animate.SPRITE_WIDTH * animate.SPRITE_SCALE / 2
 
 running = True
 while running:
@@ -19,7 +19,7 @@ while running:
         if e.type == pygame.QUIT:
             running = False
 
-    animation_timer += 1 / config.FRAME_RATE
+    animation_timer += 1 / config.FPS
 
     (sprite, frames) = animate.run
     if animation_timer >= config.ANIMATION_SPEED:
