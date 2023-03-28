@@ -1,6 +1,8 @@
 import pygame
 import config
-import animate
+from enum import Enum
+
+dx = 10
 
 frame_idx = 0
 animation_timer = 0
@@ -16,38 +18,55 @@ pygame.display.set_caption("stackman -- dev")
 # font for FPS monitoring
 font = pygame.font.SysFont("Arial", 18)
 
-BTNS_UP = {119, 1073741906}
-BTNS_LEFT = {97, 1073741904}
-BTNS_DOWN = {115, 1073741905}
-BTNS_RIGHT = {100, 1073741903}
+# WEIRD, but I need pygame initialized before loading in sprites
+import animate
 
-ACTION_IDLE = 0
-ACTION_RUN = 1
-ACTION_PUSH = 2
-ACTION_PULL = 3
+# background
+# TODO: parallax scrolling
+bg_imgs = (pygame.image.load("./assets/bg1_e.png").convert_alpha(),)
+def bg_buffer_init(offset=0, damp=1):
+    return tuple(({
+        "frame": pygame.Rect(offset, offset, bg_imgs[0].get_width(), config.DISPLAY_HEIGHT),
+        "position": pygame.math.Vector2((idx * bg_imgs[0].get_width(), 72)),
+        "damp": damp
+    } for idx in range(0,3)))
 
-DIR_RIGHT = 0
-DIR_LEFT = 1
+def bg_buffer_rotate(buffer):
+    # This is fucking stupid, use a ring buffer,
+    # keep track of the head of the tuple
+    buffer[0]["position"][0] = buffer[2]["position"][0] + bg_imgs[0].get_width()
+    return buffer[1:] + buffer[:1]
+
+class Action(Enum):
+    IDLE = 0
+    RUN  = 1
+    PUSH = 2
+    PULL = 3
+
+class Dir(Enum):
+    RIGHT = 0
+    LEFT  = 1
 
 def stackman_init():
     return {
-        "action": ACTION_IDLE,
-        "direction": DIR_RIGHT,
-        "position": pygame.math.Vector2((0,0))
+        "action": Action.IDLE,
+        "direction": Dir.RIGHT,
+        "position": pygame.math.Vector2((0,72))
     }
 
 def set_animation_frames(sm):
-    if (sm["action"] == ACTION_RUN):
+    if (sm["action"] == Action.RUN):
         (sprite, frames) = animate.run
-        if (sm["direction"] == DIR_LEFT):
+        if (sm["direction"] == Dir.LEFT):
             return (pygame.transform.flip(sprite, True, False),
                     frames)
         return (animate.run[0], animate.run[1])
-    if (sm["action"] == ACTION_IDLE):
+    if (sm["action"] == Action.IDLE):
         frame_idx = 0
         return (animate.idle[0], animate.idle[1])
 
 sm = stackman_init()
+bgs = (bg_buffer_init(0,4),)
 
 running = True
 while running:
@@ -57,18 +76,38 @@ while running:
             running = False
         if e.type == pygame.KEYUP:
             frame_idx = 0
-            sm["action"] = ACTION_IDLE
+            sm["action"] = Action.IDLE
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-        sm["position"] += (10,0)
-        sm["direction"] = DIR_RIGHT
-        sm["action"] = ACTION_RUN
+        sm["position"] += (-dx,0)
+        sm["direction"] = Dir.RIGHT
+        sm["action"] = Action.RUN
+        for bg_buffer in bgs:
+            for rect in bg_buffer:
+                rect["position"] += (-rect["damp"] * dx,0)
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-        sm["position"] -= (10,0)
-        sm["direction"] = DIR_LEFT
-        sm["action"] = ACTION_RUN
+        sm["position"] += (dx,0)
+        sm["direction"] = Dir.LEFT
+        sm["action"] = Action.RUN
+        for bg_buffer in bgs:
+            for rect in bg_buffer:
+                rect["position"] += (rect["damp"] * dx,0)
 
+    for bg_buffer in bgs:
+        if bg_buffer[0]["position"][0] < -bg_imgs[0].get_width():
+            bg_buffer = bg_buffer_rotate(bg_buffer)
+            print(bg_buffer)
+
+    display.fill((0,0,0))
+    # Q: is blitting, a waste, if it is not in display range?
+    # A: https://stackoverflow.com/questions/39185187/
+    # will-pygame-blit-sprites-with-a-rect-outside-the-display
+    for bg_buffer in bgs:
+        for rect in bg_buffer:
+            display.blit(bg_imgs[0], rect["position"], rect["frame"])
+
+    # SPRITE ANIMATION
     animation_timer += 1 / config.FPS
 
     (sprite, frames) = set_animation_frames(sm)
@@ -77,11 +116,17 @@ while running:
         frame_idx = (frame_idx + 1) % len(frames)
         animation_timer = 0
 
-    display.fill((0,0,0)) # color in RGB
     if frame_idx > len(frames) - 1:
         frame_idx = 0
+
     frames = pygame.Rect(frames[frame_idx])
-    display.blit(sprite, sm["position"], frames)
+    display.blit(sprite,
+                 ((config.DISPLAY_WIDTH -
+                   animate.SPRITE_SCALE * animate.SPRITE_WIDTH)/2,
+                  (config.DISPLAY_HEIGHT -
+                   animate.SPRITE_SCALE * animate.SPRITE_WIDTH)/2 + 200),
+                 frames)
+    # END SPRITE ANIMATION
 
     # limits FPS to 60
     # dt is delta time in seconds since last frame, used for framerate-

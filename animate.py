@@ -9,7 +9,7 @@ def _scale_frames(frames, scale):
 def _construct_frames(num, length):
     return [(length * x, 0, length, length) for x in range(0,num)]
 
-_sprite_sheet_run = pygame.image.load("./assets/run.png")
+_sprite_sheet_run = pygame.image.load("./assets/run.png").convert_alpha()
 _sprite_run = pygame.transform.scale(
     _sprite_sheet_run,
     (_sprite_sheet_run.get_width() * SPRITE_SCALE,
@@ -18,7 +18,7 @@ _sprite_run = pygame.transform.scale(
 _frames_run = _scale_frames(_construct_frames(8, SPRITE_WIDTH), SPRITE_SCALE)
 
 # IDLE
-_sprite_sheet_idle = pygame.image.load("./assets/idle.png")
+_sprite_sheet_idle = pygame.image.load("./assets/idle.png").convert_alpha()
 _sprite_idle = pygame.transform.scale(
     _sprite_sheet_idle,
     (_sprite_sheet_idle.get_width() * SPRITE_SCALE,
@@ -27,7 +27,7 @@ _sprite_idle = pygame.transform.scale(
 _frames_idle = _scale_frames(_construct_frames(10, SPRITE_WIDTH), SPRITE_SCALE)
 
 # JUMP
-_sprite_sheet_jump = pygame.image.load("./assets/jump.png")
+_sprite_sheet_jump = pygame.image.load("./assets/jump.png").convert_alpha()
 _sprite_jump = pygame.transform.scale(
     _sprite_sheet_jump,
     (_sprite_sheet_jump.get_width() * SPRITE_SCALE,
@@ -36,7 +36,7 @@ _sprite_jump = pygame.transform.scale(
 _frames_jump = _scale_frames(_construct_frames(3, SPRITE_WIDTH), SPRITE_SCALE)
 
 # LAND
-_sprite_sheet_land = pygame.image.load("./assets/land.png")
+_sprite_sheet_land = pygame.image.load("./assets/land.png").convert_alpha()
 _sprite_land = pygame.transform.scale(
     _sprite_sheet_land,
     (_sprite_sheet_land.get_width() * SPRITE_SCALE,
@@ -45,7 +45,7 @@ _sprite_land = pygame.transform.scale(
 _frames_land = _scale_frames(_construct_frames(9, SPRITE_WIDTH), SPRITE_SCALE)
 
 # ROLL
-_sprite_sheet_roll = pygame.image.load("./assets/roll.png")
+_sprite_sheet_roll = pygame.image.load("./assets/roll.png").convert_alpha()
 _sprite_roll = pygame.transform.scale(
     _sprite_sheet_roll,
     (_sprite_sheet_roll.get_width() * SPRITE_SCALE,
@@ -54,7 +54,7 @@ _sprite_roll = pygame.transform.scale(
 _frames_roll = _scale_frames(_construct_frames(7, SPRITE_WIDTH), SPRITE_SCALE)
 
 # IDLE CROUCH
-_sprite_sheet_icrouch = pygame.image.load("./assets/idle_crouch.png")
+_sprite_sheet_icrouch = pygame.image.load("./assets/idle_crouch.png").convert_alpha()
 _sprite_icrouch = pygame.transform.scale(
     _sprite_sheet_icrouch,
     (_sprite_sheet_icrouch.get_width() * SPRITE_SCALE,
@@ -63,7 +63,7 @@ _sprite_icrouch = pygame.transform.scale(
 _frames_icrouch = _scale_frames(_construct_frames(10, SPRITE_WIDTH), SPRITE_SCALE)
 
 # LEDGE
-_sprite_sheet_ledge = pygame.image.load("./assets/ledge.png")
+_sprite_sheet_ledge = pygame.image.load("./assets/ledge.png").convert_alpha()
 _sprite_ledge = pygame.transform.scale(
     _sprite_sheet_ledge,
     (_sprite_sheet_ledge.get_width() * SPRITE_SCALE,
@@ -72,7 +72,7 @@ _sprite_ledge = pygame.transform.scale(
 _frames_ledge = _scale_frames(_construct_frames(5, SPRITE_WIDTH), SPRITE_SCALE)
 
 # PULL
-_sprite_sheet_pull = pygame.image.load("./assets/pull.png")
+_sprite_sheet_pull = pygame.image.load("./assets/pull.png").convert_alpha()
 _sprite_pull = pygame.transform.scale(
     _sprite_sheet_pull,
     (_sprite_sheet_pull.get_width() * SPRITE_SCALE,
@@ -81,7 +81,7 @@ _sprite_pull = pygame.transform.scale(
 _frames_pull = _scale_frames(_construct_frames(6, SPRITE_WIDTH), SPRITE_SCALE)
 
 # PUSH
-_sprite_sheet_push = pygame.image.load("./assets/push.png")
+_sprite_sheet_push = pygame.image.load("./assets/push.png").convert_alpha()
 _sprite_push = pygame.transform.scale(
     _sprite_sheet_push,
     (_sprite_sheet_push.get_width() * SPRITE_SCALE,
@@ -90,7 +90,7 @@ _sprite_push = pygame.transform.scale(
 _frames_push = _scale_frames(_construct_frames(10, SPRITE_WIDTH), SPRITE_SCALE)
 
 # SPIN
-_sprite_sheet_spin = pygame.image.load("./assets/spin.png")
+_sprite_sheet_spin = pygame.image.load("./assets/spin.png").convert_alpha()
 _sprite_spin = pygame.transform.scale(
     _sprite_sheet_spin,
     (_sprite_sheet_spin.get_width() * SPRITE_SCALE,
@@ -99,7 +99,7 @@ _sprite_spin = pygame.transform.scale(
 _frames_spin = _scale_frames(_construct_frames(6, SPRITE_WIDTH), SPRITE_SCALE)
 
 # WALL LAND
-_sprite_sheet_wland = pygame.image.load("./assets/w_land.png")
+_sprite_sheet_wland = pygame.image.load("./assets/w_land.png").convert_alpha()
 _sprite_wland = pygame.transform.scale(
     _sprite_sheet_wland,
     (_sprite_sheet_wland.get_width() * SPRITE_SCALE,
@@ -108,7 +108,7 @@ _sprite_wland = pygame.transform.scale(
 _frames_wland = _scale_frames(_construct_frames(6, SPRITE_WIDTH), SPRITE_SCALE)
 
 # WALL SLIDE
-_sprite_sheet_wslide = pygame.image.load("./assets/w_slide.png")
+_sprite_sheet_wslide = pygame.image.load("./assets/w_slide.png").convert_alpha()
 _sprite_wslide = pygame.transform.scale(
     _sprite_sheet_wslide,
     (_sprite_sheet_wslide.get_width() * SPRITE_SCALE,
@@ -117,7 +117,7 @@ _sprite_wslide = pygame.transform.scale(
 _frames_wslide = _scale_frames(_construct_frames(3, SPRITE_WIDTH), SPRITE_SCALE)
 
 # SNEAK
-_sprite_sheet_sneak = pygame.image.load("./assets/walk_crouch.png")
+_sprite_sheet_sneak = pygame.image.load("./assets/walk_crouch.png").convert_alpha()
 _sprite_sneak = pygame.transform.scale(
     _sprite_sheet_sneak,
     (_sprite_sheet_sneak.get_width() * SPRITE_SCALE,
