@@ -104,6 +104,12 @@ def x_friction(sm):
         sm["action"] = Action.IDLE
         return (0,0)
 
+def has_forces(sm, *force_names):
+    for f in force_names:
+        if f in sm["forces"]:
+            return True
+    return False
+
 running = True
 while running:
     (sprite, frames) = (None, None)
@@ -121,15 +127,15 @@ while running:
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-        if not "run_acceleration" in sm["forces"]:
+        if not has_forces(sm, "run_acceleration", "x_friction"):
             sm["forces"]["run_acceleration"] = run_acceleration
-        sm["action"] = Action.RUN
-        sm["direction"] = Dir.RIGHT
+            sm["action"] = Action.RUN
+            sm["direction"] = Dir.RIGHT
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-        if not "run_acceleration" in sm["forces"]:
+        if not has_forces(sm, "run_acceleration", "x_friction"):
             sm["forces"]["run_acceleration"] = run_acceleration
-        sm["action"] = Action.RUN
-        sm["direction"] = Dir.LEFT
+            sm["action"] = Action.RUN
+            sm["direction"] = Dir.LEFT
 
     update_position(sm)
 
