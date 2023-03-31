@@ -11,7 +11,8 @@ clock = pygame.time.Clock()
 dt = 0
 
 pygame.init()
-display = pygame.display.set_mode((config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
+display = pygame.display.set_mode((config.DISPLAY_WIDTH,
+                                   config.DISPLAY_HEIGHT))
 pygame.display.set_caption("stackman -- dev")
 
 # font for FPS monitoring
@@ -27,11 +28,19 @@ class Action(Enum):
     PUSH = 2
     PULL = 3
 
+class Dir(Enum):
+    LEFT  = -1
+    RIGHT =  1
+
 def stackman_init():
     return {
         "action": Action.IDLE,
-        "position": pygame.math.Vector2((0,72)),
-        "velocity": pygame.math.Vector2((0, 0))
+        "direction": Dir.RIGHT,
+        "position": pygame.math.Vector2((0, 72)),
+        "velocity": pygame.math.Vector2((0, 0)),
+        "max_speed": 312.5,
+        "mass": 1, # 1 stackman
+        "forces": {},
     }
 
 def set_animation_frames(sm):
@@ -48,7 +57,13 @@ def set_animation_frames(sm):
 sm = stackman_init()
 bg_layers = bg.init("./assets/level_types/hills", 42)
 
+def apply_forces(sm):
+    # generalize later, for now, f is strictly acceleration on unit mass
+    for f in sm["forces"].values():
+        sm["velocity"] += pygame.math.Vector2(f(sm))
+
 def apply_physics(sm):
+    apply_forces(sm)
     (dx, dy) = sm["velocity"] * dt
     sm["position"] += (dx, dy)
     return (dx, dy)
@@ -60,6 +75,14 @@ def update_position(sm):
             rect["position"] -= (dx * layer["scroll_rate"],
                                  dy * layer["scroll_rate"])
 
+def run_acceleration(sm):
+    if abs(sm["velocity"][0]) >= sm["max_speed"]:
+        return (0,0)
+    else:
+        return (420 * dt, 0) \
+            if sm["direction"] == Dir.RIGHT \
+            else (-420 * dt, 0)
+
 running = True
 while running:
     (sprite, frames) = (None, None)
@@ -70,15 +93,19 @@ while running:
             frame_idx = 0
             sm["action"] = Action.IDLE
             sm["velocity"] = pygame.math.Vector2((0,0))
+            sm["forces"] = {}
 
-    BASE_VELOCITY = 312.5
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-        sm["velocity"] = pygame.math.Vector2((BASE_VELOCITY, 0))
+        if not "run_acceleration" in sm["forces"]:
+            sm["forces"]["run_acceleration"] = run_acceleration
         sm["action"] = Action.RUN
+        sm["direction"] = Dir.RIGHT
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-        sm["velocity"] = pygame.math.Vector2((-BASE_VELOCITY, 0))
+        if not "run_acceleration" in sm["forces"]:
+            sm["forces"]["run_acceleration"] = run_acceleration
         sm["action"] = Action.RUN
+        sm["direction"] = Dir.LEFT
 
     update_position(sm)
 
@@ -92,7 +119,7 @@ while running:
     display.fill((0,0,0))
 
     # Q: is blitting, a waste, if it is not in display range?
-    # A: https://stackoverflow.com/questions/39185187/
+    # A: NO -- https://stackoverflow.com/questions/39185187/
     # will-pygame-blit-sprites-with-a-rect-outside-the-display
 
     for (level, layer) in bg_layers.items():
