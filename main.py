@@ -3,8 +3,6 @@ import pprint
 import config
 from enum import Enum
 
-dx = 50
-
 frame_idx = 0
 animation_timer = 0
 
@@ -29,21 +27,17 @@ class Action(Enum):
     PUSH = 2
     PULL = 3
 
-class Dir(Enum):
-    RIGHT = 0
-    LEFT  = 1
-
 def stackman_init():
     return {
         "action": Action.IDLE,
-        "direction": Dir.RIGHT,
-        "position": pygame.math.Vector2((0,72))
+        "position": pygame.math.Vector2((0,72)),
+        "velocity": pygame.math.Vector2((0, 0))
     }
 
 def set_animation_frames(sm):
     if (sm["action"] == Action.RUN):
         (sprite, frames) = animate.run
-        if (sm["direction"] == Dir.LEFT):
+        if (sm["velocity"][0] < 0):
             return (pygame.transform.flip(sprite, True, False),
                     frames)
         return (animate.run[0], animate.run[1])
@@ -54,6 +48,18 @@ def set_animation_frames(sm):
 sm = stackman_init()
 bg_layers = bg.init("./assets/level_types/hills", 42)
 
+def apply_physics(sm):
+    (dx, dy) = sm["velocity"] * dt
+    sm["position"] += (dx, dy)
+    return (dx, dy)
+
+def update_position(sm):
+    (dx,dy) = apply_physics(sm)
+    for layer in bg_layers.values():
+        for rect in layer["buffer"]:
+            rect["position"] -= (dx * layer["scroll_rate"],
+                                 dy * layer["scroll_rate"])
+
 running = True
 while running:
     (sprite, frames) = (None, None)
@@ -63,27 +69,25 @@ while running:
         if e.type == pygame.KEYUP:
             frame_idx = 0
             sm["action"] = Action.IDLE
+            sm["velocity"] = pygame.math.Vector2((0,0))
 
+    BASE_VELOCITY = 312.5
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-        sm["position"] += (-dx,0)
-        sm["direction"] = Dir.RIGHT
+        sm["velocity"] = pygame.math.Vector2((BASE_VELOCITY, 0))
         sm["action"] = Action.RUN
-        for layer in bg_layers.values():
-            for rect in layer["buffer"]:
-                rect["position"] += (-dx * layer["scroll_rate"], 0)
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-        sm["position"] += (dx,0)
-        sm["direction"] = Dir.LEFT
+        sm["velocity"] = pygame.math.Vector2((-BASE_VELOCITY, 0))
         sm["action"] = Action.RUN
-        for layer in bg_layers.values():
-            for rect in layer["buffer"]:
-                rect["position"] += (dx * layer["scroll_rate"], 0)
+
+    update_position(sm)
 
     for (level, layer) in bg_layers.items():
         #  Take head of buffer, it's position in the x direction
         if layer["buffer"][0]["position"][0] < -bg.IMAGE_WIDTH:
-            bg_layers[level]["buffer"] = bg.buffer_rotate(layer["buffer"])
+            bg_layers[level]["buffer"] = bg.buffer_rotate_right(layer["buffer"])
+        if layer["buffer"][0]["position"][0] > 0:
+            bg_layers[level]["buffer"] = bg.buffer_rotate_left(layer["buffer"])
 
     display.fill((0,0,0))
 
@@ -121,8 +125,7 @@ while running:
     dt = clock.tick(config.FPS) / 1000
 
     # display FPS
-    fps = round(1 / dt, 2)
-    fps_text = font.render(f"FPS: {fps}", True, (255,255,255))
+    fps_text = font.render(f"FPS: {round(clock.get_fps(),4)}", True, (255,255,255))
     display.blit(fps_text, (config.DISPLAY_WIDTH - fps_text.get_width(), 0))
 
     pygame.display.update()
