@@ -105,10 +105,7 @@ def x_friction(sm):
         return (0,0)
 
 def has_forces(sm, *force_names):
-    for f in force_names:
-        if f in sm["forces"]:
-            return True
-    return False
+    return any(force in sm["forces"] for force in force_names)
 
 running = True
 while running:
