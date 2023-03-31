@@ -1,4 +1,5 @@
 import pygame
+import pprint
 import config
 from enum import Enum
 
@@ -20,6 +21,7 @@ font = pygame.font.SysFont("Arial", 18)
 
 # WEIRD, but I need pygame initialized before loading in sprites
 import animate
+import bg
 
 class Action(Enum):
     IDLE = 0
@@ -49,43 +51,8 @@ def set_animation_frames(sm):
         frame_idx = 0
         return (animate.idle[0], animate.idle[1])
 
-BG_IMAGE_WIDTH = 1920
-def bg_buffer_init(offset=72):
-    return tuple(({
-        "frame": pygame.Rect(0, 0, BG_IMAGE_WIDTH, config.DISPLAY_HEIGHT),
-        "position": pygame.math.Vector2((idx * BG_IMAGE_WIDTH, offset))
-    } for idx in range(0,3)))
-
-def bg_buffer_rotate(buffer):
-    # This is fucking stupid, use a ring buffer,
-    # keep track of the head of the tuple
-    buffer[0]["position"][0] = buffer[2]["position"][0] + BG_IMAGE_WIDTH
-    return buffer[1:] + buffer[:1]
-
 sm = stackman_init()
-bg_layers = {
-    "layer-1": {
-        "buffer": bg_buffer_init(),
-        "surface": pygame.image.load("./assets/bg1_e.png").convert_alpha(),
-        "scroll_rate": 0.03125,
-    },
-    "layer-2": {
-        "buffer": bg_buffer_init(120),
-        "surface": pygame.image.load("./assets/bg1_d.png").convert_alpha(),
-        "scroll_rate": 0.0625,
-    },
-    "layer-3": {
-        "buffer": bg_buffer_init(180),
-        "surface": pygame.image.load("./assets/bg1_c.png").convert_alpha(),
-        "scroll_rate": 0.125,
-    },
-    "layer-4": {
-        "buffer": bg_buffer_init(360),
-        "surface": pygame.image.load("./assets/bg1_b.png").convert_alpha(),
-        "scroll_rate": 0.25,
-    },
-}
-
+bg_layers = bg.init("./assets/level_types/hills", 42)
 
 running = True
 while running:
@@ -115,8 +82,8 @@ while running:
 
     for (level, layer) in bg_layers.items():
         #  Take head of buffer, it's position in the x direction
-        if layer["buffer"][0]["position"][0] < -BG_IMAGE_WIDTH:
-            bg_layers[level]["buffer"] = bg_buffer_rotate(layer["buffer"])
+        if layer["buffer"][0]["position"][0] < -bg.IMAGE_WIDTH:
+            bg_layers[level]["buffer"] = bg.buffer_rotate(layer["buffer"])
 
     display.fill((0,0,0))
 
