@@ -47,12 +47,16 @@ def stackman_init():
 def set_animation_frames(sm):
     if (sm["action"] == Action.RUN):
         (sprite, frames) = animate.run
-        if (sm["velocity"][0] < 0):
+        if (sm["direction"] == Dir.LEFT):
             return (pygame.transform.flip(sprite, True, False),
                     frames)
         return (animate.run[0], animate.run[1])
     if (sm["action"] == Action.IDLE):
         frame_idx = 0
+        (sprite, frames) = animate.idle
+        if (sm["direction"] == Dir.LEFT):
+            return (pygame.transform.flip(sprite, True, False),
+                    frames)
         return (animate.idle[0], animate.idle[1])
 
 sm = stackman_init()
@@ -82,6 +86,15 @@ def run_acceleration(sm):
     else:
         return (sm["direction"].value * 420 * dt, 0)
 
+def x_friction(sm):
+    if abs(sm["velocity"][0]) > 10:
+        return (-sm["direction"].value * 420 * dt, 0)
+    else:
+        sm["velocity"][0] = 0
+        sm["forces"] = {}
+        sm["action"] = Action.IDLE
+        return (0,0)
+
 running = True
 while running:
     (sprite, frames) = (None, None)
@@ -90,9 +103,9 @@ while running:
             running = False
         if e.type == pygame.KEYUP:
             frame_idx = 0
-            sm["action"] = Action.IDLE
-            sm["velocity"] = pygame.math.Vector2((0,0))
-            sm["forces"] = {}
+            if "run_acceleration" in sm["forces"]:
+                sm["forces"] = {}
+                sm["forces"]["x_friction"] = x_friction
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
@@ -130,6 +143,7 @@ while running:
 
     (sprite, frames) = set_animation_frames(sm)
 
+    # I think this is a naive way to interpolate
     animation_breakpoint = 0.0233 * math.exp(
         1.33 * (1 - (abs(sm["velocity"][0] / sm["max_speed"])))
     )
