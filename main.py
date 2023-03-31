@@ -2,7 +2,7 @@ import pygame
 import config
 from enum import Enum
 
-dx = 10
+dx = 50
 
 frame_idx = 0
 animation_timer = 0
@@ -20,22 +20,6 @@ font = pygame.font.SysFont("Arial", 18)
 
 # WEIRD, but I need pygame initialized before loading in sprites
 import animate
-
-# background
-# TODO: parallax scrolling
-bg_imgs = (pygame.image.load("./assets/bg1_e.png").convert_alpha(),)
-def bg_buffer_init(offset=0, damp=1):
-    return tuple(({
-        "frame": pygame.Rect(offset, offset, bg_imgs[0].get_width(), config.DISPLAY_HEIGHT),
-        "position": pygame.math.Vector2((idx * bg_imgs[0].get_width(), 72)),
-        "damp": damp
-    } for idx in range(0,3)))
-
-def bg_buffer_rotate(buffer):
-    # This is fucking stupid, use a ring buffer,
-    # keep track of the head of the tuple
-    buffer[0]["position"][0] = buffer[2]["position"][0] + bg_imgs[0].get_width()
-    return buffer[1:] + buffer[:1]
 
 class Action(Enum):
     IDLE = 0
@@ -65,8 +49,43 @@ def set_animation_frames(sm):
         frame_idx = 0
         return (animate.idle[0], animate.idle[1])
 
+BG_IMAGE_WIDTH = 1920
+def bg_buffer_init(offset=72):
+    return tuple(({
+        "frame": pygame.Rect(0, 0, BG_IMAGE_WIDTH, config.DISPLAY_HEIGHT),
+        "position": pygame.math.Vector2((idx * BG_IMAGE_WIDTH, offset))
+    } for idx in range(0,3)))
+
+def bg_buffer_rotate(buffer):
+    # This is fucking stupid, use a ring buffer,
+    # keep track of the head of the tuple
+    buffer[0]["position"][0] = buffer[2]["position"][0] + BG_IMAGE_WIDTH
+    return buffer[1:] + buffer[:1]
+
 sm = stackman_init()
-bgs = (bg_buffer_init(0,4),)
+bg_layers = {
+    "layer-1": {
+        "buffer": bg_buffer_init(),
+        "surface": pygame.image.load("./assets/bg1_e.png").convert_alpha(),
+        "scroll_rate": 0.03125,
+    },
+    "layer-2": {
+        "buffer": bg_buffer_init(120),
+        "surface": pygame.image.load("./assets/bg1_d.png").convert_alpha(),
+        "scroll_rate": 0.0625,
+    },
+    "layer-3": {
+        "buffer": bg_buffer_init(180),
+        "surface": pygame.image.load("./assets/bg1_c.png").convert_alpha(),
+        "scroll_rate": 0.125,
+    },
+    "layer-4": {
+        "buffer": bg_buffer_init(360),
+        "surface": pygame.image.load("./assets/bg1_b.png").convert_alpha(),
+        "scroll_rate": 0.25,
+    },
+}
+
 
 running = True
 while running:
@@ -83,29 +102,31 @@ while running:
         sm["position"] += (-dx,0)
         sm["direction"] = Dir.RIGHT
         sm["action"] = Action.RUN
-        for bg_buffer in bgs:
-            for rect in bg_buffer:
-                rect["position"] += (-rect["damp"] * dx,0)
+        for layer in bg_layers.values():
+            for rect in layer["buffer"]:
+                rect["position"] += (-dx * layer["scroll_rate"], 0)
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
         sm["position"] += (dx,0)
         sm["direction"] = Dir.LEFT
         sm["action"] = Action.RUN
-        for bg_buffer in bgs:
-            for rect in bg_buffer:
-                rect["position"] += (rect["damp"] * dx,0)
+        for layer in bg_layers.values():
+            for rect in layer["buffer"]:
+                rect["position"] += (dx * layer["scroll_rate"], 0)
 
-    for bg_buffer in bgs:
-        if bg_buffer[0]["position"][0] < -bg_imgs[0].get_width():
-            bg_buffer = bg_buffer_rotate(bg_buffer)
-            print(bg_buffer)
+    for (level, layer) in bg_layers.items():
+        #  Take head of buffer, it's position in the x direction
+        if layer["buffer"][0]["position"][0] < -BG_IMAGE_WIDTH:
+            bg_layers[level]["buffer"] = bg_buffer_rotate(layer["buffer"])
 
     display.fill((0,0,0))
+
     # Q: is blitting, a waste, if it is not in display range?
     # A: https://stackoverflow.com/questions/39185187/
     # will-pygame-blit-sprites-with-a-rect-outside-the-display
-    for bg_buffer in bgs:
-        for rect in bg_buffer:
-            display.blit(bg_imgs[0], rect["position"], rect["frame"])
+
+    for (level, layer) in bg_layers.items():
+        for rect in layer["buffer"]:
+            display.blit(layer["surface"], rect["position"], rect["frame"])
 
     # SPRITE ANIMATION
     animation_timer += 1 / config.FPS
@@ -118,7 +139,6 @@ while running:
 
     if frame_idx > len(frames) - 1:
         frame_idx = 0
-
     frames = pygame.Rect(frames[frame_idx])
     display.blit(sprite,
                  ((config.DISPLAY_WIDTH -
