@@ -1,6 +1,7 @@
 import pygame
 import pprint
 import config
+import math
 from enum import Enum
 
 frame_idx = 0
@@ -79,9 +80,7 @@ def run_acceleration(sm):
     if abs(sm["velocity"][0]) >= sm["max_speed"]:
         return (0,0)
     else:
-        return (420 * dt, 0) \
-            if sm["direction"] == Dir.RIGHT \
-            else (-420 * dt, 0)
+        return (sm["direction"].value * 420 * dt, 0)
 
 running = True
 while running:
@@ -131,8 +130,12 @@ while running:
 
     (sprite, frames) = set_animation_frames(sm)
 
-    if animation_timer >= config.ANIMATION_SPEED:
-        frame_idx = (frame_idx + 1) % len(frames)
+    animation_breakpoint = 0.0233 * math.exp(
+        1.33 * (1 - (abs(sm["velocity"][0] / sm["max_speed"])))
+    )
+
+    if animation_timer >= animation_breakpoint:
+        frame_idx = (frame_idx + sm["direction"].value) % len(frames)
         animation_timer = 0
 
     if frame_idx > len(frames) - 1:
