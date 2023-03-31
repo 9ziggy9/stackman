@@ -42,6 +42,7 @@ def stackman_init():
         "max_speed": 312.5,
         "mass": 1, # 1 stackman
         "forces": {},
+        "freefalling": False
     }
 
 def set_animation_frames(sm):
@@ -62,6 +63,13 @@ def set_animation_frames(sm):
 sm = stackman_init()
 bg_layers = bg.init("./assets/level_types/hills", 42)
 
+GROUND_LEVEL = 235
+ground = {
+    "frame": pygame.Surface((10 * config.DISPLAY_WIDTH, GROUND_LEVEL)),
+    "position": pygame.math.Vector2((0, config.DISPLAY_HEIGHT - GROUND_LEVEL)),
+}
+ground["frame"].fill((20,20,20))
+
 def apply_forces(sm):
     # generalize later, for now, f is strictly acceleration on unit mass
     for f in sm["forces"].values():
@@ -75,6 +83,7 @@ def apply_physics(sm):
 
 def update_position(sm):
     (dx,dy) = apply_physics(sm)
+    ground["position"] -= (dx, dy * 10) # hardcoded scrollrates
     for layer in bg_layers.values():
         for rect in layer["buffer"]:
             rect["position"] -= (dx * layer["scroll_rate"],
@@ -101,6 +110,9 @@ while running:
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             running = False
+        if e.type == pygame.KEYDOWN:
+            if e.key == 32: # 32 is spacebar
+                sm["velocity"][1] = -100
         if e.type == pygame.KEYUP:
             frame_idx = 0
             if "run_acceleration" in sm["forces"]:
@@ -137,6 +149,8 @@ while running:
     for (level, layer) in bg_layers.items():
         for rect in layer["buffer"]:
             display.blit(layer["surface"], rect["position"], rect["frame"])
+
+    display.blit(ground["frame"], ground["position"])
 
     # SPRITE ANIMATION
     animation_timer += 1 / config.FPS
