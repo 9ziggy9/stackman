@@ -33,11 +33,15 @@ class Dir(Enum):
     LEFT  = -1
     RIGHT =  1
 
+STACKMAN_INITIAL_Y = 72
+STACKMAN_INITIAL_X = 0
+
 def stackman_init():
     return {
         "action": Action.IDLE,
         "direction": Dir.RIGHT,
-        "position": pygame.math.Vector2((0, 72)),
+        "position": pygame.math.Vector2((STACKMAN_INITIAL_X,
+                                         STACKMAN_INITIAL_Y)),
         "velocity": pygame.math.Vector2((0, 0)),
         "max_speed": 312.5,
         "mass": 1, # 1 stackman
@@ -65,10 +69,37 @@ bg_layers = bg.init("./assets/level_types/hills", 42)
 
 GROUND_LEVEL = 235
 ground = {
-    "frame": pygame.Surface((10 * config.DISPLAY_WIDTH, GROUND_LEVEL)),
+    "frame": pygame.Surface((10 * config.DISPLAY_WIDTH, 2 * GROUND_LEVEL)),
     "position": pygame.math.Vector2((0, config.DISPLAY_HEIGHT - GROUND_LEVEL)),
 }
 ground["frame"].fill((20,20,20))
+
+### BEGIN PHYSICS ENGINE ###
+def run_acceleration(sm):
+    if abs(sm["velocity"][0]) >= sm["max_speed"]:
+        return (0,0)
+    return (sm["direction"].value * 420 * dt, 0)
+
+def x_friction(sm):
+    if abs(sm["velocity"][0]) > 10:
+        return (-sm["direction"].value * 420 * dt, 0)
+    sm["velocity"][0] = 0
+    sm["forces"] = {}
+    sm["action"] = Action.IDLE
+    return (0,0)
+
+G_ACCELERATION = 420
+def gravity(sm):
+    assert sm["freefalling"], "Applying gravity when not falling!"
+    if (sm["position"][1] > STACKMAN_INITIAL_Y):
+        sm["velocity"][1] = 0
+        sm["position"][1] = STACKMAN_INITIAL_Y
+        sm["freefalling"] = False
+        return (0,0)
+    return (0, G_ACCELERATION * dt)
+
+def has_forces(sm, *force_names):
+    return any(force in sm["forces"] for force in force_names)
 
 def apply_forces(sm):
     # generalize later, for now, f is strictly acceleration on unit mass
@@ -76,37 +107,40 @@ def apply_forces(sm):
         sm["velocity"] += pygame.math.Vector2(f(sm))
 
 def apply_physics(sm):
+    ## HANDLE GRAVITY
+    if "gravity" in sm["forces"]:
+        if not sm["freefalling"]:
+            del sm["forces"]["gravity"]
+    elif sm["freefalling"]:
+        sm["forces"]["gravity"] = gravity
+    ## END GRAVITY
     apply_forces(sm)
     (dx, dy) = sm["velocity"] * dt
     sm["position"] += (dx, dy)
     return (dx, dy)
 
+def clamp_ground(ground, is_falling):
+    if not is_falling:
+        ground["position"][1] = config.DISPLAY_HEIGHT - GROUND_LEVEL
+
+def clamp_bg_layers(bg_layers, is_falling):
+    if not is_falling:
+        for (layer_num, layer) in enumerate(bg_layers.values()):
+            for rect in layer["buffer"]:
+                rect["position"][1] = layer_num * 72
+
 def update_position(sm):
     (dx,dy) = apply_physics(sm)
+
     ground["position"] -= (dx, dy * 10) # hardcoded scrollrates
+    clamp_ground(ground, sm["freefalling"])
+
     for layer in bg_layers.values():
         for rect in layer["buffer"]:
-            rect["position"] -= (dx * layer["scroll_rate"],
-                                 dy * layer["scroll_rate"])
-
-def run_acceleration(sm):
-    if abs(sm["velocity"][0]) >= sm["max_speed"]:
-        return (0,0)
-    else:
-        return (sm["direction"].value * 420 * dt, 0)
-
-def x_friction(sm):
-    if abs(sm["velocity"][0]) > 10:
-        return (-sm["direction"].value * 420 * dt, 0)
-    else:
-        sm["velocity"][0] = 0
-        sm["forces"] = {}
-        sm["action"] = Action.IDLE
-        return (0,0)
-
-def has_forces(sm, *force_names):
-    return any(force in sm["forces"] for force in force_names)
-
+            rect["position"] -= (dx * layer["scroll_rate"], dy * layer["scroll_rate"])
+    clamp_bg_layers(bg_layers, sm["freefalling"])
+    
+### END PHYSICS ENGINE ###
 running = True
 while running:
     (sprite, frames) = (None, None)
@@ -116,6 +150,7 @@ while running:
         if e.type == pygame.KEYDOWN:
             if e.key == 32: # 32 is spacebar
                 sm["velocity"][1] = -100
+                sm["freefalling"] = True
         if e.type == pygame.KEYUP:
             frame_idx = 0
             if "run_acceleration" in sm["forces"]:
